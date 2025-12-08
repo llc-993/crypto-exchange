@@ -1,0 +1,22 @@
+[package]
+name = "block-eth"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+# 异步运行时
+tokio = { version = "1.25", features = ["full"] }
+# 以太坊客户端
+ethers = { version = "1.0", features = ["ws", "rustls"] }
+# 序列化/反序列化
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+# 日志
+log = "0.4"
+# 错误处理
+thiserror = "1.0"
+anyhow = "1.0"
+# 内部依赖
+common = { path = "../../common" }
+orm = { path = "../../orm" }
+block-common = { path = "../block-common" }

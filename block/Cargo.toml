@@ -1,0 +1,32 @@
+[package]
+name = "block"
+version.workspace = true
+edition.workspace = true
+authors.workspace = true
+license.workspace = true
+
+[dependencies]
+# 日志和追踪
+tracing.workspace = true
+log.workspace = true
+
+# 错误处理
+anyhow.workspace = true
+thiserror.workspace = true
+
+# 时间
+chrono.workspace = true
+
+# 异步
+tokio.workspace = true
+async-trait.workspace = true
+futures.workspace = true
+
+# 序列化/反序列化
+serde.workspace = true
+serde_json.workspace = true
+
+# 内部依赖
+common.workspace = true
+orm.workspace = true
+block-common = { path = "./block-common" }

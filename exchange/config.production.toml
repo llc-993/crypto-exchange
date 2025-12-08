@@ -1,0 +1,16 @@
+# Exchange 服务配置 (生产环境)
+
+[server]
+host = "0.0.0.0"
+port = 8086
+
+[database]
+url = "mysql://root:password@localhost:3306/crypto_exchange"
+max_connections = 20
+
+[redis]
+url = "redis://localhost:6379/0"
+pool_size = 20
+
+[log]
+level = "warn"

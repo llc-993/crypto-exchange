@@ -1,0 +1,52 @@
+[package]
+name = "common"
+version.workspace = true
+edition.workspace = true
+authors.workspace = true
+license.workspace = true
+
+[dependencies]
+# 数据库连接
+rbatis.workspace = true
+rbdc.workspace = true
+rbdc-mysql.workspace = true
+redis.workspace = true
+
+# 日志和追踪
+tracing.workspace = true
+tracing-subscriber.workspace = true
+log.workspace = true
+env_logger.workspace = true
+
+# 配置
+config.workspace = true
+dotenv.workspace = true
+
+# 错误处理
+anyhow.workspace = true
+thiserror.workspace = true
+
+# 时间
+chrono.workspace = true
+
+# 异步
+tokio.workspace = true
+async-trait.workspace = true
+futures.workspace = true
+
+# 序列化/反序列化
+serde.workspace = true
+serde_json.workspace = true
+
+# 工具
+once_cell.workspace = true
+uuid.workspace = true
+
+# 精确数值计算
+rust_decimal.workspace = true
+
+# pulsar 消息队列
+pulsar.workspace = true
+
+# OpenSSL
+openssl.workspace = true
