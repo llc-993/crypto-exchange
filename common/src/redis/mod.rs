@@ -128,6 +128,11 @@ impl Cache {
         get_redis_cache().lock().await.hgetall(key).await
     }
 
+    /// Hash: 删除字段
+    pub async fn hdel(&self, key: &str, fields: &[&str]) -> RedisResult<usize> {
+        get_redis_cache().lock().await.hdel(key, fields).await
+    }
+
     /// Set: 添加成员
     pub async fn sadd(&self, key: &str, members: &[&str]) -> RedisResult<usize> {
         get_redis_cache().lock().await.sadd(key, members).await

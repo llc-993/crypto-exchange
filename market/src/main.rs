@@ -1,3 +1,6 @@
+mod consumer;
+mod handle;
+
 use common::AppConfig;
 
 #[tokio::main]
@@ -50,6 +53,21 @@ async fn main() {
     }
     
     log::info!("Market服务启动在: {}:{}", config.server.host, config.server.port);
+
+
+    // 初始化 Pulsar Client
+    if config.pulsar.enabled {
+        log::info!("正在初始化 Pulsar Client: {}", config.pulsar.url);
+        if let Err(e) = ::common::PulsarClient::init_global(&config.pulsar.url).await {
+            log::error!("Pulsar 初始化失败: {}", e);
+        } else {
+            // 启动消费者
+            consumer::start_thumb_price_consumer().await;
+        }
+    } else {
+        log::warn!("Pulsar 未启用，跳过初始化");
+    }
+
     
     // 保持服务运行
     log::info!("服务正在运行中，按 Ctrl+C 退出...");

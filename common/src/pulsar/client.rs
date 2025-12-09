@@ -1,6 +1,7 @@
 use std::collections::HashMap;
 use std::sync::Arc;
 use tokio::sync::{RwLock, OnceCell};
+use tokio::runtime::Handle;
 
 use futures::StreamExt;
 use pulsar::{
@@ -15,6 +16,9 @@ impl<T> Event for T where T: Serialize + for<'de> Deserialize<'de> + Send + Sync
 
 /// 全局 PulsarClient 单例
 static GLOBAL_PULSAR_CLIENT: OnceCell<Arc<PulsarClient>> = OnceCell::const_new();
+
+/// 全局 Tokio Runtime Handle（用于在非 Tokio 线程中 spawn 任务）
+static RUNTIME_HANDLE: OnceCell<Handle> = OnceCell::const_new();
 
 /// Pulsar 客户端封装
 /// 支持多个 Producer，按 topic 自动管理
@@ -34,12 +38,18 @@ impl PulsarClient {
 
     /// 初始化全局 PulsarClient
     pub async fn init_global(url: &str) -> Result<(), pulsar::Error> {
+        // 保存当前 runtime handle，用于在非 Tokio 线程中 spawn 任务
+        let handle = Handle::try_current()
+            .or_else(|_| Err(pulsar::Error::Custom("必须在 Tokio runtime 中调用 init_global".to_string())))?;
+        RUNTIME_HANDLE.set(handle)
+            .map_err(|_| pulsar::Error::Custom("Runtime handle already set".to_string()))?;
+
         let client = Arc::new(Self::new());
         client.connect(url).await?;
-        
+
         GLOBAL_PULSAR_CLIENT.set(client.clone())
             .map_err(|_| pulsar::Error::Custom("Global PulsarClient already initialized".to_string()))?;
-        
+
         log::info!("✅ 全局 PulsarClient 已初始化");
         Ok(())
     }
@@ -54,9 +64,8 @@ impl PulsarClient {
     /// 发送消息（静态方法，自动使用全局实例）
     /// 
     /// # 示例
-    /// ```ignore
+    ///re
     /// PulsarClient::publish("my-topic", &data).await;
-    /// ```
     pub async fn publish<T: Event>(topic: &str, msg: &T) {
         let Some(client) = Self::global() else {
             log::warn!("[Pulsar] 未初始化，跳过发送");
@@ -68,15 +77,29 @@ impl PulsarClient {
     }
 
     /// 发送消息（静态方法，异步后台执行，不阻塞当前线程）
-    /// 
+    /// 支持在非 Tokio runtime 线程中调用（如 disruptor 处理器线程）
+    ///
     /// # 示例
-    /// ```ignore
+    ///
     /// PulsarClient::publish_async("my-topic", data);
-    /// ```
     pub fn publish_async<T: Event + Clone>(topic: &'static str, msg: T) {
-        tokio::spawn(async move {
-            Self::publish(topic, &msg).await;
-        });
+        // 尝试获取当前 runtime handle，如果失败则使用全局 handle
+        // 这样可以支持在非 Tokio runtime 线程中调用（如 disruptor 处理器线程）
+        let handle = Handle::try_current()
+            .ok()
+            .or_else(|| RUNTIME_HANDLE.get().cloned());
+
+        match handle {
+            Some(handle) => {
+                handle.spawn(async move {
+                    Self::publish(topic, &msg).await;
+                });
+            }
+
+            None => {
+                log::error!("[Pulsar] 无法获取 Tokio runtime handle，消息发送失败: {}", topic);
+            }
+        }
     }
 
     /// 发送消息并等待确认（静态方法）
@@ -117,20 +140,20 @@ impl PulsarClient {
 
         // 不存在则创建
         self.ensure_initialized().await?;
-        
+
         let client_guard = self.client.read().await;
         let client = client_guard.as_ref().unwrap();
-        
+
         let new_producer = client
             .producer()
             .with_topic(topic)
             .with_options(ProducerOptions::default())
             .build()
             .await?;
-        
+
         let mut producers = self.producers.write().await;
         producers.insert(topic.to_string(), new_producer);
-        
+
         log::info!("✅ Producer 已创建，topic: {}", topic);
         Ok(())
     }
@@ -138,10 +161,10 @@ impl PulsarClient {
     /// 订阅指定 Topic
     pub async fn subscribe<T: DeserializeMessage>(&self, topic: &str, subscription: &str) -> Result<Consumer<T, TokioExecutor>, pulsar::Error> {
         self.ensure_initialized().await?;
-        
+
         let client_guard = self.client.read().await;
         let client = client_guard.as_ref().unwrap();
-        
+
         let consumer = client
             .consumer()
             .with_topic(topic)
@@ -149,21 +172,20 @@ impl PulsarClient {
             .with_subscription_type(SubType::Shared)
             .build()
             .await?;
-            
+
         log::info!("✅ 已订阅 Topic: {}, Subscription: {}", topic, subscription);
         Ok(consumer)
     }
 
     /// 发送消息到指定 topic（异步非阻塞，不等待确认）
-    /// 
+    ///
     /// # 参数
     /// * `topic` - 目标 topic
     /// * `msg` - 要发送的消息
-    /// 
+    ///
     /// # 示例
-    /// ```ignore
+    ///
     /// PulsarClient::global().unwrap().send("my-topic", &my_data).await?;
-    /// ```
     pub async fn send<T: Event>(
         &self,
         topic: &str,
@@ -171,10 +193,10 @@ impl PulsarClient {
     ) -> Result<(), pulsar::Error> {
         // 确保 Producer 存在
         self.get_or_create_producer(topic).await?;
-        
+
         let payload = serde_json::to_vec(msg)
             .map_err(|e| pulsar::Error::Custom(format!("JSON序列化失败: {}", e)))?;
-        
+
         let mut producers = self.producers.write().await;
         let producer = producers.get_mut(topic).unwrap();
         producer.send_non_blocking(payload).await?;
@@ -189,10 +211,10 @@ impl PulsarClient {
     ) -> Result<(), pulsar::Error> {
         // 确保 Producer 存在
         self.get_or_create_producer(topic).await?;
-        
+
         let payload = serde_json::to_vec(msg)
             .map_err(|e| pulsar::Error::Custom(format!("JSON序列化失败: {}", e)))?;
-        
+
         let mut producers = self.producers.write().await;
         let producer = producers.get_mut(topic).unwrap();
         producer.send_non_blocking(payload).await?.await?;
@@ -208,26 +230,26 @@ impl PulsarClient {
     ) -> Result<(), pulsar::Error> {
         // 确保 Producer 存在
         self.get_or_create_producer(topic).await?;
-        
+
         use std::time::{SystemTime, UNIX_EPOCH};
-        
+
         let payload = serde_json::to_vec(msg)
             .map_err(|e| pulsar::Error::Custom(format!("JSON序列化失败: {}", e)))?;
-        
+
         // 计算延时后的时间戳（毫秒）
         let now = SystemTime::now()
             .duration_since(UNIX_EPOCH)
             .map_err(|e| pulsar::Error::Custom(format!("获取系统时间失败: {}", e)))?;
-        
+
         let deliver_at_ms = (now.as_millis() as i64) + (delay_sec as i64 * 1000);
-        
+
         // 创建带延时的消息
         let message = pulsar::producer::Message {
             payload,
             deliver_at_time: Some(deliver_at_ms),
             ..Default::default()
         };
-        
+
         let mut producers = self.producers.write().await;
         let producer = producers.get_mut(topic).unwrap();
         producer.send_non_blocking(message).await?;
@@ -245,10 +267,10 @@ impl PulsarClient {
         T: DeserializeMessage + Event,
     {
         self.ensure_initialized().await?;
-        
+
         let client_guard = self.client.read().await;
         let client = client_guard.as_ref().unwrap();
-        
+
         let consumer = client
             .consumer()
             .with_topic(topic)
@@ -264,7 +286,7 @@ impl PulsarClient {
     /// 消费消息（自动 ACK）
     pub async fn consume_loop<T, F>(mut consumer: Consumer<T, TokioExecutor>, mut handler: F)
     where
-        T: Event + DeserializeMessage<Output = T>,
+        T: Event + DeserializeMessage<Output=T>,
         F: FnMut(T) + Send + 'static,
     {
         log::info!("🔄 Consumer 开始运行...");
@@ -285,7 +307,6 @@ impl PulsarClient {
         }
     }
 }
-
 impl Default for PulsarClient {
     fn default() -> Self {
         Self::new()

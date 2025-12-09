@@ -48,5 +48,9 @@ rust_decimal.workspace = true
 # pulsar 消息队列
 pulsar.workspace = true
 
+# MongoDB
+mongodb.workspace = true
+bson.workspace = true
+
 # OpenSSL
 openssl.workspace = true

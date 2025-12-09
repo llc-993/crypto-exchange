@@ -327,7 +327,7 @@ impl OkxFutures {
                             "[OKX Futures {}] Funding Rate 转换成功 - 资金费率: {:?}, 结算时间: {:?}",
                             inst_id, mark_price.funding_rate, mark_price.funding_time
                         );
-                        common::PulsarClient::publish_async(common::pulsar::mark_price::FUTURES_MARK_PRICE, mark_price);
+                        PulsarClient::publish_async(common::pulsar::mark_price::FUTURES_MARK_PRICE, mark_price);
                     }
                     Err(e) => log::error!("[OKX Futures {}] Funding Rate 转换失败: {}", inst_id, e),
                 }

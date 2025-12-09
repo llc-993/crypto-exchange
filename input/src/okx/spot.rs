@@ -8,6 +8,7 @@ use tokio::time::interval;
 use tokio_tungstenite::{connect_async, tungstenite::protocol::Message};
 use futures::{StreamExt, SinkExt};
 use serde_json::json;
+use common::pulsar::topics;
 
 /// WebSocket 重连配置
 #[derive(Clone)]
@@ -279,7 +280,7 @@ impl OkxSpot {
                                                                     "[OKX Spot {}] 转换成功 - 价格: {}, 涨跌幅: {:?}%", 
                                                                     inst_id, unified_ticker.close, unified_ticker.change_percent_24h
                                                                 );
-                                                                PulsarClient::publish_async("spot-ticker", unified_ticker);
+                                                                PulsarClient::publish_async(topics::ticker::SPOT_TICKER, unified_ticker);
                                                             }
                                                             Err(e) => log::error!("[OKX Spot {}] Ticker 转换失败: {}", inst_id, e),
                                                         }

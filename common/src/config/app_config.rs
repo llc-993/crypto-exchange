@@ -10,6 +10,8 @@ pub struct AppConfig {
     pub pulsar: PulsarConfig,
     #[serde(default)]
     pub disruptor: DisruptorConfig,
+    #[serde(default)]
+    pub mongodb: MongoDBConfig,
     pub log: LogConfig,
 }
 
@@ -57,6 +59,27 @@ impl Default for DisruptorConfig {
             buffer_size: 1024,
             wait_strategy: "BusySpin".to_string(),
             consumer_type: "Single".to_string(),
+        }
+    }
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct MongoDBConfig {
+    pub enabled: bool,
+    pub url: String,
+    pub database: String,
+    pub max_pool_size: Option<u32>,
+    pub min_pool_size: Option<u32>,
+}
+
+impl Default for MongoDBConfig {
+    fn default() -> Self {
+        Self {
+            enabled: false,
+            url: "mongodb://localhost:27017".to_string(),
+            database: "crypto_exchange".to_string(),
+            max_pool_size: Some(10),
+            min_pool_size: Some(1),
         }
     }
 }
@@ -179,6 +202,22 @@ impl AppConfig {
                 consumer_type: env::var("DISRUPTOR_CONSUMER_TYPE")
                     .unwrap_or_else(|_| "Single".to_string()),
             },
+            mongodb: MongoDBConfig {
+                enabled: env::var("MONGODB_ENABLED")
+                    .unwrap_or_else(|_| "false".to_string())
+                    .parse()
+                    .unwrap_or(false),
+                url: env::var("MONGODB_URL")
+                    .unwrap_or_else(|_| "mongodb://localhost:27017".to_string()),
+                database: env::var("MONGODB_DATABASE")
+                    .unwrap_or_else(|_| "crypto_exchange".to_string()),
+                max_pool_size: env::var("MONGODB_MAX_POOL_SIZE")
+                    .ok()
+                    .and_then(|v| v.parse().ok()),
+                min_pool_size: env::var("MONGODB_MIN_POOL_SIZE")
+                    .ok()
+                    .and_then(|v| v.parse().ok()),
+            },
             log: LogConfig {
                 level: env::var("LOG_LEVEL").unwrap_or_else(|_| "info".to_string()),
             },
@@ -209,6 +248,7 @@ impl Default for AppConfig {
                 level: "info".to_string(),
             },
             disruptor: DisruptorConfig::default(),
+            mongodb: MongoDBConfig::default(),
         }
     }
 }

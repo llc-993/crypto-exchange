@@ -28,7 +28,7 @@ serde.workspace = true
 serde_json.workspace = true
 
 # 数学库
-nalgebra = "0.32"
+nalgebra = "0.33.2"
 
 # 工具
 once_cell.workspace = true
@@ -40,3 +40,8 @@ rust_decimal.workspace = true
 # 内部依赖
 common.workspace = true
 orm.workspace = true
+pulsar.workspace = true
+
+# mongodb
+mongodb.workspace = true
+bson.workspace = true

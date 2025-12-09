@@ -35,6 +35,8 @@ fi
 # 设置环境变量
 export CC_x86_64_unknown_linux_musl=x86_64-linux-musl-gcc
 export CARGO_TARGET_X86_64_UNKNOWN_LINUX_MUSL_LINKER=x86_64-linux-musl-gcc
+export RUSTC_WRAPPER=sccache
+export CARGO_NET_GIT_FETCH_WITH_CLI=true
 
 # 确保在项目根目录
 cd "$(dirname "$0")"

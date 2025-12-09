@@ -8,11 +8,12 @@ pub mod error;
 pub mod logger;
 pub mod enums;
 pub mod pulsar;
+pub mod mongodb;
 pub mod models;
 
 // 重新导出常用类型和函数
 pub use error::{AppError, AppResult};
-pub use config::{DbConfig, RedisConfig, AppConfig}; 
+pub use config::{DbConfig, RedisConfig, AppConfig, MongoDBConfig}; 
 pub use logger::{init_logger, init_logger_with_level};
 pub use enums::{KlineInterval, KlineIntervalConfig};
 
@@ -30,6 +31,9 @@ pub use redis::{
 
 // Pulsar 相关
 pub use pulsar::{PulsarClient, Event};
+
+// MongoDB 相关
+pub use mongodb::MongoDBClient;
 
 // 数据模型
 pub use models::{

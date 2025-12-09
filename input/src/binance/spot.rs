@@ -8,6 +8,7 @@ use tokio::time::interval;
 use tokio_tungstenite::{connect_async, tungstenite::protocol::Message};
 use futures::{StreamExt, SinkExt};
 use serde_json::json;
+use common::pulsar::topics;
 
 /// WebSocket 重连配置
 #[derive(Clone)]
@@ -297,7 +298,7 @@ impl BinanceSpot {
                                             log::debug!("[{}] Ticker - 价格: {}, 24h成交量: {}", symbol, price, volume);
                                             match common::TickerConverter::from_binance_spot(&json_msg, symbol) {
                                                 Ok(unified_ticker) => {
-                                                    common::PulsarClient::publish_async("spot-ticker", unified_ticker);
+                                                    common::PulsarClient::publish_async(topics::ticker::SPOT_TICKER, unified_ticker);
                                                 }
                                                 Err(e) => log::error!("[Binance Spot {}] Ticker 转换失败: {}", symbol, e),
                                             }

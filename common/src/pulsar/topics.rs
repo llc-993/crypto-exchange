@@ -9,6 +9,9 @@ pub mod ticker {
     
     /// 合约 Ticker 数据
     pub const FUTURES_TICKER: &str = "futures-ticker";
+
+    // 在撮合推出来的交易数据
+    pub const EX_THUMB_PRICE: &str = "ex-thumb-price";
 }
 
 /// Mark Price 相关 Topics

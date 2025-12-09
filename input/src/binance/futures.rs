@@ -8,6 +8,7 @@ use tokio::time::interval;
 use tokio_tungstenite::{connect_async, tungstenite::protocol::Message};
 use futures::{StreamExt, SinkExt};
 use serde_json::json;
+use common::pulsar::topics;
 
 /// WebSocket 重连配置
 #[derive(Clone)]
@@ -325,7 +326,7 @@ impl BinanceFutures {
                     "[Binance Futures {}] 转换成功 - 价格: {}, 涨跌幅: {:?}%",
                     symbol, unified_ticker.close, unified_ticker.change_percent_24h
                 );
-                common::PulsarClient::publish_async("futures-ticker", unified_ticker);
+                common::PulsarClient::publish_async(topics::ticker::FUTURES_TICKER, unified_ticker);
             }
             Err(e) => log::error!("[Binance Futures {}] Ticker 转换失败: {}", symbol, e),
         }

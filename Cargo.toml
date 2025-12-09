@@ -90,8 +90,12 @@ orm = { path = "./orm" }
 sa-token-plugin-actix-web={version = "0.1.11", features = ["redis"]}
 
 # 消息队列
-# 消息队列
 pulsar = {version = "6.3.1", features = ["tokio-runtime", "serde_json"]}
+
+# MongoDB
+mongodb = "3.2.3"
+bson = { version = "2.15.0", features = ["chrono-0_4"] }
 
 # OpenSSL (静态链接，用于跨平台编译)
 openssl = { version = "0.10", features = ["vendored"] }
+sccache = {version = "0.10.0", features = ["all"]}

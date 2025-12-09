@@ -9,6 +9,7 @@ use tokio::time::interval;
 use tokio_tungstenite::{connect_async, tungstenite::protocol::Message};
 use futures::{StreamExt, SinkExt};
 use serde_json::json;
+use common::pulsar::topics;
 
 // 为 AppExchangeSpotCoin 实现 BitgetSymbol trait
 impl BitgetSymbol for AppExchangeSpotCoin {
@@ -287,6 +288,17 @@ impl BitgetSpot {
                                                         let last = data.get("last").and_then(|v| v.as_str()).unwrap_or("0");
                                                         let base_vol = data.get("baseVol").and_then(|v| v.as_str()).unwrap_or("0");
                                                         log::debug!("[{}] Ticker - 价格: {}, 24h成交量: {}", inst_id, last, base_vol);
+                                                         // 转换为 UnifiedTicker 并发送到 Pulsar
+                                                        match common::TickerConverter::from_bitget_spot(data, inst_id) {
+                                                            Ok(unified_ticker) => {
+                                                                log::debug!(
+                                                                    "[OKX Spot {}] 转换成功 - 价格: {}, 涨跌幅: {:?}%",
+                                                                    inst_id, unified_ticker.close, unified_ticker.change_percent_24h
+                                                                );
+                                                                PulsarClient::publish_async(topics::ticker::SPOT_TICKER, unified_ticker);
+                                                            }
+                                                            Err(e) => log::error!("[OKX Spot {}] Ticker 转换失败: {}", inst_id, e),
+                                                        }
                                                     }
                                                     ch if ch.starts_with("books") => {
                                                         let asks = data.get("asks").and_then(|v| v.as_array()).map(|a| a.len()).unwrap_or(0);
