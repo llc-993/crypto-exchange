@@ -13,6 +13,7 @@ SERVICES=(
     "manage"
     "job"
     "input"
+    "market"
 )
 
 echo "======================================"

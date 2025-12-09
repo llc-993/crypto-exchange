@@ -65,8 +65,8 @@ pub async fn generate_kline(thumb_price: &CoinThumbPrice, interval: KlineInterva
         interval.interval()
     );
 
-    // 从Redis获取现有K线
-    let mut kline = match cache.get(&redis_key).await {
+    // 从Redis Hash获取现有K线（使用open_time作为field）
+    let mut kline = match cache.hget(&redis_key, &open_time.to_string()).await {
         Ok(Some(json_str)) => {
             // 反序列化现有K线
             match serde_json::from_str::<Kline>(&json_str) {
@@ -88,12 +88,13 @@ pub async fn generate_kline(thumb_price: &CoinThumbPrice, interval: KlineInterva
             }
         }
         Ok(None) => {
-            // Redis中没有，创建新K线
+            // Redis Hash中没有该open_time的K线，创建新K线
             create_new_kline(thumb_price, interval, open_time, close_time).await
         }
         Err(e) => {
-            log::error!("[Kline] Redis获取失败: {}", e);
-            return;
+            log::error!("[Kline] Redis获取失败: key={}, error={}", redis_key, e);
+            // Redis错误时也创建新K线，避免阻塞
+            create_new_kline(thumb_price, interval, open_time, close_time).await
         }
     };
 
@@ -104,12 +105,12 @@ pub async fn generate_kline(thumb_price: &CoinThumbPrice, interval: KlineInterva
     }
 
     // 每次更新后都实时推送到Pulsar（无论K线是否完成）
-    let topic = match thumb_price.market_type {
+  /*  let topic = match thumb_price.market_type {
         MarketType::Spot => topics::kline::SPOT_KLINE,
         MarketType::Futures => topics::kline::FUTURES_KLINE,
-    };
+    };*/
 
-    PulsarClient::publish_async(topic, kline.clone());
+   // PulsarClient::publish_async(topic, kline.clone());
     log::debug!(
         "[Kline] 实时推送K线: {} {:?} {} 价格: {} 状态: {}",
         kline.symbol,
@@ -150,7 +151,7 @@ pub async fn generate_kline(thumb_price: &CoinThumbPrice, interval: KlineInterva
                         cache_map.insert(redis_key.clone(), count);
                     }
 
-                    if count > 100 {
+                    if count > 2 {
                         // 解析所有Kline数据并按时间排序
                         let mut klines: Vec<Kline> = all_data
                             .into_iter()

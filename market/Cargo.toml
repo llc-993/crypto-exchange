@@ -33,6 +33,7 @@ nalgebra = "0.33.2"
 # 工具
 once_cell.workspace = true
 uuid.workspace = true
+rayon.workspace = true
 
 # 精确数值计算
 rust_decimal.workspace = true

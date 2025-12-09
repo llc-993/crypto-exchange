@@ -95,6 +95,7 @@ pulsar = {version = "6.3.1", features = ["tokio-runtime", "serde_json"]}
 # MongoDB
 mongodb = "3.2.3"
 bson = { version = "2.15.0", features = ["chrono-0_4"] }
+rayon = {version = "1.10.0"}
 
 # OpenSSL (静态链接，用于跨平台编译)
 openssl = { version = "0.10", features = ["vendored"] }
