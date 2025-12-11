@@ -1,5 +1,8 @@
 use disruptor::Sequence;
 use rust_decimal::Decimal;
+use rust_decimal::prelude::{FromPrimitive, ToPrimitive};
+use std::str::FromStr;
+use rand::Rng;
 use common::models::{coin_thumb_price, UnifiedTicker};
 use crate::common::{price_cache, ticker_cache};
 use crate::common::ticker_cache::calculate_weighted_futures_price;
@@ -32,7 +35,7 @@ pub fn handle_ticker_event(event: &UnifiedTickerEvent, _sequence: Sequence, _end
         MarketType::Futures => {
             calculate_weighted_futures_price(&ticker.symbol)
                 .map(|(weighted_price, exchange_count)| {
-                    #[cfg(debug_assertions)]
+                   // #[cfg(debug_assertions)]
                     {
                         log::debug!("[Futures加权价格] {} 加权平均价格: {} (来自 {} 个交易所)", 
                             ticker.symbol, weighted_price, exchange_count);
@@ -77,20 +80,49 @@ fn apply_price_adjustment(_symbol: &str, price: Decimal, _market_type: &MarketTy
 }
 
 /// 处理订单撮合
-fn matching_order(symbol: &str, price: Decimal, market_type: &MarketType) {
+fn matching_order(symbol: &str, price: Decimal, _market_type: &MarketType) {
     // TODO: 从数据库/缓存获取待撮合订单
     // 1. 止损单检查
     // 2. 止盈单检查  
     // 3. 限价单撮合
-    #[cfg(debug_assertions)]
-    log::debug!("[撮合] {} {:?} 价格: {}", symbol, market_type, price);
+   // #[cfg(debug_assertions)]
+    log::debug!("[撮合] {} {:?} 价格: {}", symbol, _market_type, price);
 }
 
 /// 将数据推送到 market 服务
 fn handle_price_change(symbol: &str, price: Decimal, market_type: MarketType) {
     // 推送到 market 服务生成 K 线、行情
-    let thumb_price = coin_thumb_price::CoinThumbPrice::new(symbol.to_string(), price, market_type);
+    // 生成交易数量
+    let volume: Decimal= exponential_random_decimal(price.clone());
+    let thumb_price = coin_thumb_price::CoinThumbPrice::new(symbol.to_string(), price, volume, market_type);
 
     PulsarClient::publish_async(topics::ticker::EX_THUMB_PRICE, thumb_price);
+}
+
+/// 生成指数衰减随机小数
+pub fn exponential_random_decimal(factor: Decimal) -> Decimal {
+    let mut rng = rand::thread_rng();
+
+    // 推荐：固定 max 的范围
+    let max_min = Decimal::from_str("0.0001").unwrap();
+    let max_max = Decimal::from_str("10000").unwrap();
+
+    // 1. max ∈ [max_min , max_max]
+    let r_max: f64 = rng.gen();
+    let max = max_min + (max_max - max_min) * Decimal::from_f64(r_max).unwrap();
+
+    // 2. r ∈ [0,1]
+    let r: f64 = rng.gen();
+    let r_dec = Decimal::from_f64(r).unwrap();
+
+    // 3. decay = exp(-factor) —— 使用 f64::exp()
+    let factor_f64 = factor.to_f64().unwrap();
+    let decay = Decimal::from_f64((-factor_f64).exp()).unwrap();
+
+    // 4. 结果
+    let v = max * r_dec * decay;
+
+    // 5. 保留 6 位小数
+    v.round_dp(6)
 }
 

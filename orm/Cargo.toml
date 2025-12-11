@@ -37,3 +37,5 @@ rust_decimal.workspace = true
 
 # 公共库
 common.workspace = true
+
+#sea-orm = "1.1.19"

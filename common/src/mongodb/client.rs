@@ -109,6 +109,7 @@ impl MongoDBClient {
             return Err(mongodb::error::Error::custom("MongoDBClient 未初始化"));
         };
         let collection = client.collection::<T>(collection_name);
+
         collection.insert_many(documents).await
     }
 

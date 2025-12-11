@@ -2,6 +2,7 @@ use rust_decimal::Decimal;
 use serde::{Deserialize, Serialize};
 use bson::{doc, Document};
 use crate::{KlineInterval, MarketType};
+use crate::models::coin_thumb_price::CoinThumbPrice;
 use crate::mongodb::MongoDBClient;
 use crate::redis::cache;
 use crate::redis::keys::mongodb::COLLECTION_EXISTS;
@@ -73,14 +74,20 @@ impl Kline {
     }
 
     /// 更新价格（更新最高价、最低价、收盘价）
-    pub fn update_price(&mut self, price: Decimal) {
-        if price > self.high {
-            self.high = price;
+    pub fn update_price(&mut self, thumb_price: CoinThumbPrice) {
+        if thumb_price.price > self.high {
+            self.high = thumb_price.price;
         }
-        if price < self.low {
-            self.low = price;
+        if thumb_price.price < self.low {
+            self.low = thumb_price.price;
         }
-        self.close = price;
+        self.close = thumb_price.price;
+        // 累加成交量
+        self.volume = Some(thumb_price.volume + self.volume.unwrap_or(Decimal::ZERO));
+        // 计算成交额 = (成交量 * 当前价格) + 之前的
+        self.quote_volume = Some(
+            self.quote_volume.unwrap_or(Decimal::ZERO) + (thumb_price.price * thumb_price.volume)
+        )
     }
 
     /// 标记K线为已完成
@@ -122,7 +129,7 @@ impl Kline {
     fn to_filter(&self) -> Document {
         doc! {
             "symbol": &self.symbol,
-            "market_type": format!("{:?}", self.market_type),
+            "market_type": self.market_type.as_str(),
             "interval": format!("{:?}", self.interval),
             "open_time": self.open_time,
         }
@@ -212,7 +219,7 @@ impl Kline {
         MongoDBClient::insert_one(&collection_name, self).await
     }
 
-    /// 插入多个 Kline 到 MongoDB
+    /// 插入多个 Kline 到 MongoDB（支持 upsert：存在则更新，不存在则插入）
     /// 注意：所有 Kline 必须有相同的 market_type 和 interval
     ///
     /// # 示例
@@ -220,19 +227,28 @@ impl Kline {
     /// let klines = vec![kline1, kline2, kline3];
     /// Kline::insert_many(klines).await?;
     /// ```
-    pub async fn insert_many(klines: Vec<Kline>) -> Result<mongodb::results::InsertManyResult, mongodb::error::Error> {
+    pub async fn insert_many(klines: Vec<Kline>) -> Result<(), mongodb::error::Error> {
         if klines.is_empty() {
             return Err(mongodb::error::Error::custom("Kline 列表不能为空"));
         }
 
-        // 使用第一个 Kline 的 market_type 和 interval 生成集合名称
         let first_kline = &klines[0];
-        let collection_name = Self::collection_name(first_kline); //first_kline.collection_name();
+        let collection_name = first_kline.collection_name();
 
         // 确保集合已初始化
-        Self::ensure_collection_initialized(collection_name.as_str()).await?;
+        Self::ensure_collection_initialized(&collection_name).await?;
 
-        MongoDBClient::insert_many(&collection_name, klines).await
+        let Some(client) = MongoDBClient::global() else {
+            return Err(mongodb::error::Error::custom("MongoDBClient 未初始化"));
+        };
+        let collection = client.collection::<Document>(&collection_name);
+
+        // 对每个 Kline 执行 upsert 操作
+        for kline in &klines {
+            kline.upsert_one().await?;
+        }
+
+        Ok(())
     }
 
     // ==================== Read 操作 ====================
@@ -257,7 +273,7 @@ impl Kline {
     ) -> Result<Option<Kline>, mongodb::error::Error> {
         let filter = doc! {
             "symbol": symbol,
-            "market_type": format!("{:?}", market_type),
+            "market_type": market_type.as_str(),
             "interval": format!("{:?}", interval),
             "open_time": open_time,
         };
@@ -289,7 +305,7 @@ impl Kline {
     ) -> Result<Vec<Kline>, mongodb::error::Error> {
         let mut filter = doc! {
             "symbol": symbol,
-            "market_type": format!("{:?}", market_type),
+            "market_type": market_type.as_str(),
             "interval": format!("{:?}", interval),
         };
 
@@ -336,7 +352,7 @@ impl Kline {
     ) -> Result<Vec<Kline>, mongodb::error::Error> {
         let filter = doc! {
             "symbol": symbol,
-            "market_type": format!("{:?}", market_type),
+            "market_type": market_type.as_str(),
             "interval": format!("{:?}", interval),
         };
 
@@ -368,7 +384,7 @@ impl Kline {
 
         filter.insert("symbol", symbol);
 
-        filter.insert("market_type", format!("{:?}", market_type));
+        filter.insert("market_type", market_type.as_str());
         filter.insert("interval", format!("{:?}", interval));
 
         let collection_name = Self::get_collection_name(symbol.to_string(), market_type, interval);
@@ -475,7 +491,7 @@ impl Kline {
 
         filter.insert("symbol", symbol);
 
-        filter.insert("market_type", format!("{:?}", market_type));
+        filter.insert("market_type", market_type.as_str());
         filter.insert("interval", format!("{:?}", interval));
 
         // 添加时间范围过滤

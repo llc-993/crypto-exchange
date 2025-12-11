@@ -7,9 +7,21 @@ use rust_decimal::Decimal;
 pub enum MarketType {
     /// 现货
     #[default]
+    #[serde(alias = "Spot", alias = "SPOT")]
     Spot,
     /// 永续合约
+    #[serde(alias = "Futures", alias = "FUTURES")]
     Futures,
+}
+
+impl MarketType {
+    /// 转换为小写字符串（用于 MongoDB 存储）
+    pub fn as_str(&self) -> &'static str {
+        match self {
+            MarketType::Spot => "spot",
+            MarketType::Futures => "futures",
+        }
+    }
 }
 
 /// 统一的 Ticker 数据结构

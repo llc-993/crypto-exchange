@@ -3,8 +3,9 @@ use common::pulsar::topics;
 use common::PulsarClient;
 use futures::StreamExt;
 use pulsar::Consumer;
-use common::enums::KlineInterval;
 use crate::handle::kline_handle;
+use crate::handle::generate_thumb_stats;
+use crate::handle::generate_orderbook_depth;
 
 
 pub async fn start_thumb_price_consumer() {
@@ -40,7 +41,11 @@ async fn consume_thumb_price_loop(mut consumer: Consumer<CoinThumbPrice, pulsar:
                 // 1、生成k线
                 // 生成所有时间间隔的K线
                 kline_handle::generate_all_klines(&thumb_price).await;
+                // 2、生成行情
+                generate_thumb_stats(&thumb_price).await;
 
+                // 3、生成盘口
+                generate_orderbook_depth(&thumb_price).await;
 
                 if let Err(e) = consumer.ack(&msg).await {
                     log::error!("[价格] Ack 失败: {}", e);

@@ -7,6 +7,7 @@ use common::models::coin_thumb_price::CoinThumbPrice;
 use std::collections::HashMap;
 use std::sync::Mutex;
 use once_cell::sync::Lazy;
+use rust_decimal::Decimal;
 
 /// Redis Hash 字段数量缓存
 /// Key: redis_key, Value: 字段数量
@@ -77,7 +78,7 @@ pub async fn generate_kline(thumb_price: &CoinThumbPrice, interval: KlineInterva
                         create_new_kline(thumb_price, interval, open_time, close_time).await
                     } else {
                         // 更新现有K线
-                        k.update_price(thumb_price.price);
+                        k.update_price(thumb_price.clone());
                         k
                     }
                 }
@@ -105,12 +106,12 @@ pub async fn generate_kline(thumb_price: &CoinThumbPrice, interval: KlineInterva
     }
 
     // 每次更新后都实时推送到Pulsar（无论K线是否完成）
-  /*  let topic = match thumb_price.market_type {
-        MarketType::Spot => topics::kline::SPOT_KLINE,
-        MarketType::Futures => topics::kline::FUTURES_KLINE,
-    };*/
+    /*  let topic = match thumb_price.market_type {
+          MarketType::Spot => topics::kline::SPOT_KLINE,
+          MarketType::Futures => topics::kline::FUTURES_KLINE,
+      };*/
 
-   // PulsarClient::publish_async(topic, kline.clone());
+    // PulsarClient::publish_async(topic, kline.clone());
     log::debug!(
         "[Kline] 实时推送K线: {} {:?} {} 价格: {} 状态: {}",
         kline.symbol,
@@ -144,7 +145,7 @@ pub async fn generate_kline(thumb_price: &CoinThumbPrice, interval: KlineInterva
                 // 获取所有数据并初始化/更新缓存
                 if let Ok(all_data) = cache.hgetall(&redis_key).await {
                     let count = all_data.len();
-                    
+
                     // 更新缓存（初始化或更新）
                     {
                         let mut cache_map = HASH_COUNT_CACHE.lock().unwrap();
@@ -161,11 +162,11 @@ pub async fn generate_kline(thumb_price: &CoinThumbPrice, interval: KlineInterva
                                     .and_then(|_| serde_json::from_str::<Kline>(&json_str).ok())
                             })
                             .collect();
-                        
+
                         // 按open_time排序，取最老的50条
                         klines.sort_by_key(|k| k.open_time);
                         let oldest_50: Vec<Kline> = klines.into_iter().take(50).collect();
-                        
+
                         // 存入MongoDB
                         if let Err(e) = Kline::insert_many(oldest_50.clone()).await {
                             log::error!("[Kline] MongoDB批量存储失败: {}", e);
@@ -202,20 +203,27 @@ pub async fn generate_kline(thumb_price: &CoinThumbPrice, interval: KlineInterva
 }
 
 /// 创建新K线
+/// 创建新K线
 async fn create_new_kline(
     thumb_price: &CoinThumbPrice,
     interval: KlineInterval,
     open_time: i64,
     close_time: i64,
 ) -> Kline {
-    Kline::new(
+    let mut kline = Kline::new(
         thumb_price.symbol.clone(),
         thumb_price.market_type.clone(),
         interval,
         open_time,
         close_time,
         thumb_price.price,
-    )
+    );
+
+    // 初始化成交量和成交额
+    kline.volume = Some(thumb_price.volume);
+    kline.quote_volume = Some(thumb_price.volume * thumb_price.price);
+
+    kline
 }
 
 /// 计算K线的时间戳

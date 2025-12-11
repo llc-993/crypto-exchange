@@ -10,15 +10,20 @@ pub struct CoinThumbPrice {
     // 现价
     pub price: Decimal,
 
+    // 成交量（可选，兼容旧数据）
+    #[serde(default)]
+    pub volume: Decimal,
+
     // 市场类型
     pub market_type: MarketType,
 }
 
 impl CoinThumbPrice {
-    pub fn new(symbol: String, price: Decimal, market_type: MarketType) -> Self {
+    pub fn new(symbol: String, price: Decimal, volume: Decimal, market_type: MarketType) -> Self {
         Self {
             symbol,
             price,
+            volume,
             market_type,
         }
     }
