@@ -1,6 +1,9 @@
 // 公共模块
 // 提供数据库、Redis、日志、错误处理等通用功能
 
+rust_i18n::i18n!("locales");
+
+
 pub mod config;
 pub mod database;
 pub mod redis;
@@ -10,7 +13,10 @@ pub mod enums;
 pub mod pulsar;
 pub mod mongodb;
 pub mod models;
-
+pub mod response;
+pub mod middleware;
+pub mod constants;
+pub mod utils;
 // 重新导出常用类型和函数
 pub use error::{AppError, AppResult};
 pub use config::{DbConfig, RedisConfig, AppConfig, MongoDBConfig}; 

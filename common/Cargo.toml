@@ -54,3 +54,19 @@ bson.workspace = true
 
 # OpenSSL
 openssl.workspace = true
+
+google-authenticator = "0.4"
+rust-i18n = "3"
+# redis连接池
+deadpool-redis = { version = "0.22", features = ["rt_tokio_1", "serde"] }
+
+# Sa-Token
+sa-token-core = "0.1.11"
+sa-token-plugin-actix-web.workspace = true
+lazy_static = "1.5.0"
+
+# Web 框架
+actix-web = "4"
+actix-cors = "0.7"
+actix-multipart = "0.7"
+futures-util = "0.3.31" # actix-web 仍然可以使用 tokio 运行时特性

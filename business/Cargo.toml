@@ -16,6 +16,12 @@ tracing.workspace = true
 tracing-subscriber.workspace = true
 log.workspace = true
 
+# 数据库ORM
+rbatis.workspace = true
+rbdc.workspace = true
+rbdc-mysql.workspace = true
+rbs.workspace = true
+
 # 错误处理
 anyhow.workspace = true
 thiserror.workspace = true
@@ -48,3 +54,6 @@ sa-token-plugin-actix-web.workspace=true
 fluent.workspace = true
 fluent-bundle.workspace = true
 unic-langid.workspace = true
+
+# i18n
+rust-i18n = "3"
