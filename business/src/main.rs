@@ -1,12 +1,27 @@
+
+use std::sync::Arc;
+use actix_cors::Cors;
+use actix_web::{web, App, HttpServer};
+use actix_web::middleware::Logger;
+use rbatis::RBatis;
+use sa_token_plugin_actix_web::{RedisStorage, SaTokenConfig, SaTokenState};
 use common::AppConfig;
+use common::constants::{SA_TOKEN_AUTH_HEADER_NAME, SA_TOKEN_KEY_PREFIX};
+use common::middleware::error_handler;
+use middleware::i18n::I18n;
+use common::middleware::sa_token::sa_token_middleware::SaTokenMiddleware;
+use common::middleware::sa_token::auth_checker::DefaultAuthChecker;
+use common::utils::redis_util::RedisUtil;
 
 mod api;
 mod service;
 mod middleware;
 mod config;
+mod state;
 
-#[tokio::main]
-async fn main() {
+//#[tokio::main]
+#[actix_web::main]
+async fn main()  -> std::io::Result<()>{
     // 嵌入配置文件（编译时加载）
     const DEFAULT_CONFIG: &str = include_str!("../config.toml");
     const PROD_CONFIG: &str = include_str!("../config.production.toml");
@@ -57,12 +72,92 @@ async fn main() {
     log::info!("Business服务启动在: {}:{}", config.server.host, config.server.port);
     
     // 保持服务运行
-    log::info!("服务正在运行中，按 Ctrl+C 退出...");
+    /*log::info!("服务正在运行中，按 Ctrl+C 退出...");
     
     // 使用 tokio::signal 等待退出信号
     tokio::signal::ctrl_c()
         .await
         .expect("Failed to listen for ctrl-c signal");
     
-    log::info!("收到退出信号，正在关闭服务...");
+    log::info!("收到退出信号，正在关闭服务...");*/
+    
+    //  初始化 sa-token (使用 Redis 存储)
+    // 初始化 Redis 存储
+    let redis_storage = RedisStorage::new(&config.redis.url, SA_TOKEN_KEY_PREFIX)
+        .await
+        .map_err(|e| {
+            log::error!("Redis 连接失败: {}", e);
+            std::io::Error::new(std::io::ErrorKind::Other, e)
+        })?;
+
+    // 初始化 Sa-Token Manager
+    let sa_token_manager = SaTokenConfig::builder()
+        .storage(Arc::new(redis_storage))
+        .token_name(SA_TOKEN_AUTH_HEADER_NAME)
+        .timeout(86400) // 24 小时
+        .build();
+
+    let sa_token_middleware = SaTokenMiddleware::builder()
+        .state(SaTokenState { manager: Arc::new(sa_token_manager.clone()) })
+        .auth_checker(Arc::new(
+            DefaultAuthChecker::builder()
+                .add_match("/api/**")
+                .add_exclude("/api/common/**")
+                .add_exclude("/api/auth/**")
+                .add_exclude("/api/message/list")
+                .add_exclude("/api/prod/**")
+                .build()
+        ))
+        .build();
+
+    // 初始化 RBatis
+    let rb = RBatis::new();
+    rb.link(rbdc_mysql::MysqlDriver {}, &config.database.url)
+        .await
+        .map_err(|e| {
+            log::error!("数据库连接失败: {}", e);
+            std::io::Error::new(std::io::ErrorKind::Other, e)
+        })?;
+    log::info!("✅ 数据库连接成功");
+    let rb = Arc::new(rb);
+
+    // 初始化 Redis 连接池
+    log::info!("⚡ 初始化 Redis 连接池...");
+    let redis_util = RedisUtil::from_url(config.redis.url)
+        .expect("初始化 Redis连接池失败");
+    let redis_util = Arc::new(redis_util); // Wrap in Arc
+    log::info!("📦 Redis 连接池已就绪");
+
+    // 组装工程依赖
+    let state = state::AppState { rb, redis: redis_util };
+    let state_data = web::Data::new(state.clone());
+
+    let addr = format!("{}:{}", config.server.host, config.server.port);
+    log::info!("🚀 启动 Actix Web 服务器...");
+    HttpServer::new(move || {
+        App::new()
+            // 全局中间件配置
+            .wrap(Logger::default())
+            .wrap(
+                Cors::default()
+                    .allow_any_origin()
+                    .allow_any_method()
+                    .allow_any_header()
+                    .max_age(3600),
+            )
+            // 注册 i18n 中间件（在 Sa-Token 之前，确保语言先设置）
+            .wrap(I18n)
+            // Sa-Token 中间件
+            .wrap(sa_token_middleware.clone())
+            // 注册 JSON 和 Query 错误处理器
+            .app_data(error_handler::json_config())
+            .app_data(error_handler::query_config())
+            // 注册全局数据
+            .app_data(state_data.clone()) // Inject AppState
+            .service(api::common::test)
+            .service(api::common::test_query)
+            .service(api::common::test_body)
+    }).bind(&addr)?
+        .run()
+        .await
 }

@@ -66,11 +66,11 @@ pub async fn init_db(config: &DbConfig) -> AppResult<()> {
     let rb = RBatis::new();
     // 初始化数据库连接
     rb.init(MysqlDriver {}, &config.build_url_with_pool())
-        .map_err(|e| AppError::DatabaseError(e.to_string()))?;
+        .map_err(|e| AppError::database_error(e.to_string()))?;
 
     // 设置全局实例
     DB.set(rb)
-        .map_err(|_| AppError::DatabaseError("Database already initialized".to_string()))?;
+        .map_err(|_| AppError::database_error("Database already initialized".to_string()))?;
 
     log::info!("✅ 数据库连接初始化成功");
     Ok(())
@@ -95,7 +95,7 @@ pub async fn test_connection() -> AppResult<bool> {
         }
         Err(e) => {
             log::error!("❌ 数据库连接测试失败: {}", e);
-            Err(AppError::DatabaseError(e.to_string()))
+            Err(AppError::database_error(e.to_string()))
         }
     }
 }
