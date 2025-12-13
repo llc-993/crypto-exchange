@@ -11,6 +11,8 @@ use common::middleware::error_handler;
 use middleware::i18n::I18n;
 use common::middleware::sa_token::sa_token_middleware::SaTokenMiddleware;
 use common::middleware::sa_token::auth_checker::DefaultAuthChecker;
+use common::services::config_service::ConfigService;
+use common::services::ip_service::IpService;
 use common::utils::redis_util::RedisUtil;
 
 mod api;
@@ -127,9 +129,17 @@ async fn main()  -> std::io::Result<()>{
         .expect("初始化 Redis连接池失败");
     let redis_util = Arc::new(redis_util); // Wrap in Arc
     log::info!("📦 Redis 连接池已就绪");
+    
+    let config_service = ConfigService::new(rb.clone(), redis_util.clone());
+    let ip_service = IpService::new(redis_util.clone());
 
     // 组装工程依赖
-    let state = state::AppState { rb, redis: redis_util };
+    let state = state::AppState { 
+        rb, 
+        redis: redis_util,
+        config_service: Arc::new(config_service),
+        ip_service: Arc::new(ip_service)
+    };
     let state_data = web::Data::new(state.clone());
 
     let addr = format!("{}:{}", config.server.host, config.server.port);

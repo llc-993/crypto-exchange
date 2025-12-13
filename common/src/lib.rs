@@ -1,5 +1,7 @@
 // 公共模块
 // 提供数据库、Redis、日志、错误处理等通用功能
+extern crate self as common;
+
 
 rust_i18n::i18n!("locales");
 

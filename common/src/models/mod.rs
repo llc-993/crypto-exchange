@@ -5,6 +5,7 @@ pub mod coin_thumb_price;
 pub mod kline;
 pub mod coin_thumb;
 pub mod order_book_depth;
+pub mod config_mapping;
 
 pub use ticker::{UnifiedTicker, MarketType};
 pub use mark_price::UnifiedMarkPrice;
