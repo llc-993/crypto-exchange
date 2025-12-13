@@ -3,6 +3,9 @@ use actix_web::{get, post, web, Responder};
 use serde::Deserialize;
 use common::error::AppError;
 use common::models::config_mapping::base_config::BaseConfig;
+use common::services::upload::FileData;
+use actix_multipart::Multipart;
+use futures::{StreamExt, TryStreamExt};
 use crate::state::AppState;
 
 #[derive(Debug, Deserialize)]
@@ -72,4 +75,57 @@ pub async fn config(
 ) -> Result<impl Responder, AppError> {
     let base_config: BaseConfig = state.config_service.load_config().await?;
     R::success(base_config)
+}
+
+
+/// 上传图片接口
+///
+/// 从配置服务读取当前使用的上传服务名称，动态选择对应的上传实现
+#[post("/api/common/uploadImg")]
+pub async fn upload_image(
+    state: web::Data<AppState>,
+    mut payload: Multipart,
+) -> Result<impl Responder, AppError> {
+    log::info!("收到文件上传请求");
+
+    // 从 Multipart 中提取文件数据
+    let mut file_data_opt: Option<FileData> = None;
+
+    while let Ok(Some(mut field)) = payload.try_next().await {
+        let content_disposition = field.content_disposition();
+        let file_name = content_disposition
+            .and_then(|cd| cd.get_filename())
+            .unwrap_or("unknown")
+            .to_string();
+
+        let content_type = field.content_type()
+            .map(|ct| ct.to_string())
+            .unwrap_or_else(|| "application/octet-stream".to_string());
+
+        // 读取文件数据
+        let mut data = Vec::new();
+        while let Some(chunk) = field.next().await {
+            let chunk = chunk.map_err(|e| {
+                AppError::business_with_params(
+                    "error.upload_failed",
+                    serde_json::json!({"reason": e.to_string()})
+                )
+            })?;
+            data.extend_from_slice(&chunk);
+        }
+
+        file_data_opt = Some(FileData {
+            file_name,
+            content_type,
+            data,
+        });
+        break; // 只处理第一个文件
+    }
+
+    let file_data = file_data_opt.ok_or_else(|| AppError::business("error.upload_no_file"))?;
+
+    // 通过服务支持上传文件
+    let file_vo = state.upload_service.store_file(file_data).await?;
+
+    R::success(file_vo)
 }

@@ -10,6 +10,7 @@ license.workspace = true
 actix-web.workspace = true
 actix-rt.workspace = true
 actix-cors.workspace = true
+actix-multipart = "0.7.2"
 
 # 日志和追踪
 tracing.workspace = true

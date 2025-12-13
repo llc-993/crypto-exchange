@@ -61,6 +61,13 @@ openssl.workspace = true
 
 google-authenticator = "0.4"
 rust-i18n = "3"
+# File type inference
+infer = "0.19"
+
+# AWS S3
+aws-config = { version = "1.1", optional = true }
+aws-sdk-s3 = { version = "1.1", optional = true }
+
 # redis连接池
 deadpool-redis = { version = "0.22", features = ["rt_tokio_1", "serde"] }
 
@@ -79,3 +86,8 @@ actix-web = "4"
 actix-cors = "0.7"
 actix-multipart = "0.7"
 futures-util = "0.3.31" # actix-web 仍然可以使用 tokio 运行时特性
+
+[features]
+default = []
+with-s3 = ["aws-config", "aws-sdk-s3"]
+

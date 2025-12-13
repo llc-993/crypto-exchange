@@ -4,6 +4,7 @@ pub mod converter;
 pub mod coin_thumb_price;
 pub mod kline;
 pub mod coin_thumb;
+pub mod vo;
 pub mod order_book_depth;
 pub mod config_mapping;
 

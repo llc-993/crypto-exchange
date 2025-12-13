@@ -13,6 +13,7 @@ use common::middleware::sa_token::sa_token_middleware::SaTokenMiddleware;
 use common::middleware::sa_token::auth_checker::DefaultAuthChecker;
 use common::services::config_service::ConfigService;
 use common::services::ip_service::IpService;
+use common::services::upload::UploadServiceSupport;
 use common::utils::redis_util::RedisUtil;
 
 mod api;
@@ -132,13 +133,16 @@ async fn main()  -> std::io::Result<()>{
 
     let config_service = ConfigService::new(rb.clone(), redis_util.clone());
     let ip_service = IpService::new(redis_util.clone());
+    let upload_service_support = UploadServiceSupport::new(rb.clone(), redis_util.clone())
+        .await;
 
     // 组装工程依赖
     let state = state::AppState {
         rb,
         redis: redis_util,
         config_service: Arc::new(config_service),
-        ip_service: Arc::new(ip_service)
+        ip_service: Arc::new(ip_service),
+        upload_service: Arc::new(upload_service_support)
     };
     let state_data = web::Data::new(state.clone());
 
@@ -169,6 +173,7 @@ async fn main()  -> std::io::Result<()>{
             .service(api::common::test_body)
             .service(api::common::query_ip_address)
             .service(api::common::config)
+            .service(api::common::upload_image)
     }).bind(&addr)?
         .run()
         .await
