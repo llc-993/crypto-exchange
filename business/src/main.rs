@@ -129,13 +129,13 @@ async fn main()  -> std::io::Result<()>{
         .expect("初始化 Redis连接池失败");
     let redis_util = Arc::new(redis_util); // Wrap in Arc
     log::info!("📦 Redis 连接池已就绪");
-    
+
     let config_service = ConfigService::new(rb.clone(), redis_util.clone());
     let ip_service = IpService::new(redis_util.clone());
 
     // 组装工程依赖
-    let state = state::AppState { 
-        rb, 
+    let state = state::AppState {
+        rb,
         redis: redis_util,
         config_service: Arc::new(config_service),
         ip_service: Arc::new(ip_service)
@@ -167,6 +167,8 @@ async fn main()  -> std::io::Result<()>{
             .service(api::common::test)
             .service(api::common::test_query)
             .service(api::common::test_body)
+            .service(api::common::query_ip_address)
+            .service(api::common::config)
     }).bind(&addr)?
         .run()
         .await
