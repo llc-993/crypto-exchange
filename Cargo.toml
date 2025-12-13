@@ -14,6 +14,7 @@ members = [
     "block",
     "block/btc",
     "block/block-common",
+    "config_derive",
 ]
 
 # 可选成员，单独编译

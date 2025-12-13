@@ -17,6 +17,7 @@ pub mod response;
 pub mod middleware;
 pub mod constants;
 pub mod utils;
+pub mod services;
 // 重新导出常用类型和函数
 pub use error::{AppError, AppResult};
 pub use config::{DbConfig, RedisConfig, AppConfig, MongoDBConfig}; 
