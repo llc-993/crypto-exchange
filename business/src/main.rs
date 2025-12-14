@@ -15,6 +15,9 @@ use common::services::config_service::ConfigService;
 use common::services::ip_service::IpService;
 use common::services::upload::UploadServiceSupport;
 use common::utils::redis_util::RedisUtil;
+use common::services::email::EmailServiceSupport;
+use common::services::emqx_service::EmqxService;
+use common::services::sms::SmsServiceSupport;
 
 mod api;
 mod service;
@@ -136,13 +139,24 @@ async fn main()  -> std::io::Result<()>{
     let upload_service_support = UploadServiceSupport::new(rb.clone(), redis_util.clone())
         .await;
 
+    let email_service = EmailServiceSupport::new(rb.clone(), redis_util.clone())
+        .await;
+
+    let sms_service = SmsServiceSupport::new(rb.clone(), redis_util.clone())
+        .await;
+
+    let config_service_arc = Arc::new(config_service);
+    let emqx_service = EmqxService::new(config_service_arc.clone());
     // 组装工程依赖
     let state = state::AppState {
         rb,
         redis: redis_util,
-        config_service: Arc::new(config_service),
+        config_service: config_service_arc,
         ip_service: Arc::new(ip_service),
-        upload_service: Arc::new(upload_service_support)
+        upload_service: Arc::new(upload_service_support),
+        email_service: Arc::new(email_service),
+        emqx_service: Arc::new(emqx_service),
+        sms_service: Arc::new(sms_service),
     };
     let state_data = web::Data::new(state.clone());
 

@@ -8,7 +8,7 @@ pub trait AuthChecker: Send + Sync {
     /// 检查请求是否需要鉴权
     /// 
     /// # 参数
-    /// - `req`: 当前请求
+    /// - `vo`: 当前请求
     /// 
     /// # 返回
     /// - `true`: 需要鉴权
@@ -18,7 +18,7 @@ pub trait AuthChecker: Send + Sync {
     /// 验证 LoginId
     ///
     /// # 参数
-    /// - `req`: 当前请求
+    /// - `vo`: 当前请求
     /// - `_login_id`: 登录ID
     ///
     /// # 返回

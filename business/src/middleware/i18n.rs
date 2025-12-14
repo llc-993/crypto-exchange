@@ -89,7 +89,7 @@ fn get_locale_from_request(req: &ServiceRequest) -> String {
     }
     
     // 3. 从 Cookie 获取（如果需要）
-    // if let Some(cookie) = req.cookie("lang") {
+    // if let Some(cookie) = vo.cookie("lang") {
     //     return normalize_locale(cookie.value());
     // }
     
