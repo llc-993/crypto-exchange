@@ -6,6 +6,7 @@ pub mod kline;
 pub mod coin_thumb;
 pub mod vo;
 pub mod order_book_depth;
+pub mod req;
 pub mod config_mapping;
 pub mod req;
 

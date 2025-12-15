@@ -15,4 +15,12 @@ pub struct BaseConfig {
     #[config(code = "defaultAvatar", default = "/")]
     pub default_avatar: Option<String>,
 
+    /// 邮件服务
+    #[config(code = "emailService", default = "gmail")]
+    pub email_service: Option<String>,
+
+    /// 短信服务
+    #[config(code = "smsService", default = "dxb")]
+    pub sms_service: Option<String>,
+
 }

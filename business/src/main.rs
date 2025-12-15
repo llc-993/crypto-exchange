@@ -8,21 +8,22 @@ use sa_token_plugin_actix_web::{RedisStorage, SaTokenConfig, SaTokenState};
 use common::AppConfig;
 use common::constants::{SA_TOKEN_AUTH_HEADER_NAME, SA_TOKEN_KEY_PREFIX};
 use common::middleware::error_handler;
-use common::middleware::sa_token::auth_checker::DefaultAuthChecker;
+use middleware::i18n::I18n;
 use common::middleware::sa_token::sa_token_middleware::SaTokenMiddleware;
+use common::middleware::sa_token::auth_checker::DefaultAuthChecker;
 use common::services::config_service::ConfigService;
 use common::services::ip_service::IpService;
 use common::services::upload::UploadServiceSupport;
 use common::utils::redis_util::RedisUtil;
-use middleware::i18n::I18n;
+use common::services::email::EmailServiceSupport;
+use common::services::emqx_service::EmqxService;
+use common::services::sms::SmsServiceSupport;
 
-mod handle;
+mod api;
 mod service;
 mod middleware;
 mod config;
 mod state;
-
-
 
 //#[tokio::main]
 #[actix_web::main]
@@ -138,13 +139,24 @@ async fn main()  -> std::io::Result<()>{
     let upload_service_support = UploadServiceSupport::new(rb.clone(), redis_util.clone())
         .await;
 
+    let email_service = EmailServiceSupport::new(rb.clone(), redis_util.clone())
+        .await;
+
+    let sms_service = SmsServiceSupport::new(rb.clone(), redis_util.clone())
+        .await;
+
+    let config_service_arc = Arc::new(config_service);
+    let emqx_service = EmqxService::new(config_service_arc.clone());
     // 组装工程依赖
     let state = state::AppState {
         rb,
         redis: redis_util,
-        config_service: Arc::new(config_service),
+        config_service: config_service_arc,
         ip_service: Arc::new(ip_service),
-        upload_service: Arc::new(upload_service_support)
+        upload_service: Arc::new(upload_service_support),
+        email_service: Arc::new(email_service),
+        emqx_service: Arc::new(emqx_service),
+        sms_service: Arc::new(sms_service),
     };
     let state_data = web::Data::new(state.clone());
 
@@ -170,12 +182,12 @@ async fn main()  -> std::io::Result<()>{
             .app_data(error_handler::query_config())
             // 注册全局数据
             .app_data(state_data.clone()) // Inject AppState
-            .service(handle::common::test)
-            .service(handle::common::test_query)
-            .service(handle::common::test_body)
-            .service(handle::common::query_ip_address)
-            .service(handle::common::config)
-            .service(handle::common::upload_image)
+            .service(api::common::test)
+            .service(api::common::test_query)
+            .service(api::common::test_body)
+            .service(api::common::query_ip_address)
+            .service(api::common::config)
+            .service(api::common::upload_image)
     }).bind(&addr)?
         .run()
         .await
