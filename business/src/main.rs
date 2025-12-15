@@ -18,13 +18,14 @@ use common::utils::redis_util::RedisUtil;
 use common::services::email::EmailServiceSupport;
 use common::services::emqx_service::EmqxService;
 use common::services::sms::SmsServiceSupport;
-
+use common::mq::message_queue::MessageQueue;
 
 mod handle;
 mod service;
 mod middleware;
 mod config;
 mod state;
+mod subscribers;
 
 //#[tokio::main]
 #[actix_web::main]
@@ -148,6 +149,8 @@ async fn main()  -> std::io::Result<()>{
 
     let config_service_arc = Arc::new(config_service);
     let emqx_service = EmqxService::new(config_service_arc.clone());
+    // redis-mq
+    let mq = MessageQueue::new(redis_util.clone());
     // 组装工程依赖
     let state = state::AppState {
         rb,
@@ -158,8 +161,12 @@ async fn main()  -> std::io::Result<()>{
         email_service: Arc::new(email_service),
         emqx_service: Arc::new(emqx_service),
         sms_service: Arc::new(sms_service),
+        mq: Arc::new(mq),
     };
     let state_data = web::Data::new(state.clone());
+
+    // 注册消息队列订阅者
+    subscribers::init_subscribers(state_data.clone()).await;
 
     let addr = format!("{}:{}", config.server.host, config.server.port);
     log::info!("🚀 启动 Actix Web 服务器...");

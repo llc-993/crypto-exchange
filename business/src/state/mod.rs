@@ -1,5 +1,6 @@
 use std::sync::Arc;
 use rbatis::RBatis;
+use common::mq::message_queue::MessageQueue;
 use common::services::config_service::ConfigService;
 use common::services::email::EmailServiceSupport;
 use common::services::emqx_service::EmqxService;
@@ -19,4 +20,5 @@ pub struct AppState {
     pub email_service: Arc<EmailServiceSupport>,
     pub emqx_service: Arc<EmqxService>,
     pub sms_service: Arc<SmsServiceSupport>,
+    pub mq: Arc<MessageQueue>
 }
