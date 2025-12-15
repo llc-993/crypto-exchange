@@ -196,6 +196,7 @@ async fn main()  -> std::io::Result<()>{
             .service(handle::common::query_ip_address)
             .service(handle::common::config)
             .service(handle::common::upload_image)
+            .service(handle::user::login)
     }).bind(&addr)?
         .run()
         .await

@@ -1,4 +1,4 @@
-use rbatis::crud;
+use rbatis::{crud, impl_select};
 use rbatis::rbdc::datetime::DateTime;
 use rust_decimal::Decimal;
 use serde::{Deserialize, Serialize};
@@ -50,6 +50,10 @@ pub struct AppUser {
 }
 
 crud!(AppUser {}, "app_user");
+impl_select!(AppUser{select_by_name(name: &str) -> Option => "`where user_account = #{name} LIMIT 1`" });
+impl_select!(AppUser{select_by_id(id: i64) -> Option => "`where id = #{id} LIMIT 1`"});
+impl_select!(AppUser{select_by_share_code(code: &str) -> Option => "`where share_code = #{code} LIMIT 1`"});
+
 
 impl AppUser {
     pub const TABLE_NAME: &'static str = "app_user";
