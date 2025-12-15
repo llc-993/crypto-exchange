@@ -19,7 +19,8 @@ use common::services::email::EmailServiceSupport;
 use common::services::emqx_service::EmqxService;
 use common::services::sms::SmsServiceSupport;
 
-mod api;
+
+mod handle;
 mod service;
 mod middleware;
 mod config;
@@ -182,12 +183,12 @@ async fn main()  -> std::io::Result<()>{
             .app_data(error_handler::query_config())
             // 注册全局数据
             .app_data(state_data.clone()) // Inject AppState
-            .service(api::common::test)
-            .service(api::common::test_query)
-            .service(api::common::test_body)
-            .service(api::common::query_ip_address)
-            .service(api::common::config)
-            .service(api::common::upload_image)
+            .service(handle::common::test)
+            .service(handle::common::test_query)
+            .service(handle::common::test_body)
+            .service(handle::common::query_ip_address)
+            .service(handle::common::config)
+            .service(handle::common::upload_image)
     }).bind(&addr)?
         .run()
         .await

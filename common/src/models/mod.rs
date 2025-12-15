@@ -8,7 +8,6 @@ pub mod vo;
 pub mod order_book_depth;
 pub mod req;
 pub mod config_mapping;
-pub mod req;
 
 pub use ticker::{UnifiedTicker, MarketType};
 pub use mark_price::UnifiedMarkPrice;

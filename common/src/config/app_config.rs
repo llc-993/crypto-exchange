@@ -7,6 +7,7 @@ pub struct AppConfig {
     pub server: ServerConfig,
     pub database: DatabaseConfig,
     pub redis: RedisConfig,
+    #[serde(default)]
     pub pulsar: PulsarConfig,
     #[serde(default)]
     pub disruptor: DisruptorConfig,
@@ -37,6 +38,15 @@ pub struct RedisConfig {
 pub struct PulsarConfig {
     pub url: String,
     pub enabled: bool,
+}
+
+impl Default for PulsarConfig {
+    fn default() -> Self {
+        Self {
+            url: "pulsar://127.0.0.1:6650".to_string(),
+            enabled: false,
+        }
+    }
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -183,9 +193,9 @@ impl AppConfig {
                 url: env::var("PULSAR_URL")
                     .unwrap_or_else(|_| "pulsar://127.0.0.1:6650".to_string()),
                 enabled: env::var("PULSAR_ENABLED")
-                    .unwrap_or_else(|_| "true".to_string())
+                    .unwrap_or_else(|_| "false".to_string())
                     .parse()
-                    .unwrap_or(true),
+                    .unwrap_or(false),
             },
             disruptor: DisruptorConfig {
                 enabled: env::var("DISRUPTOR_ENABLED")
@@ -239,10 +249,7 @@ impl Default for AppConfig {
                 url: "redis://localhost:6379".to_string(),
                 pool_size: 10,
             },
-            pulsar: PulsarConfig {
-                url: "pulsar://127.0.0.1:6650".to_string(),
-                enabled: true,
-            },
+            pulsar: PulsarConfig::default(),
             log: LogConfig {
                 level: "info".to_string(),
             },
