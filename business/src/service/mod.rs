@@ -2,3 +2,4 @@
 pub mod user_service;
 pub mod trade_service;
 pub mod market_service;
+pub mod agent_relation_service;

@@ -19,6 +19,7 @@ use common::services::email::EmailServiceSupport;
 use common::services::emqx_service::EmqxService;
 use common::services::sms::SmsServiceSupport;
 use common::mq::message_queue::MessageQueue;
+use crate::service::agent_relation_service::AgentRelationService;
 
 mod handle;
 mod service;
@@ -151,6 +152,8 @@ async fn main()  -> std::io::Result<()>{
     let emqx_service = EmqxService::new(config_service_arc.clone());
     // redis-mq
     let mq = MessageQueue::new(redis_util.clone());
+
+    let agent_relation_service = AgentRelationService::new(rb.clone());
     // 组装工程依赖
     let state = state::AppState {
         rb,
@@ -162,6 +165,7 @@ async fn main()  -> std::io::Result<()>{
         emqx_service: Arc::new(emqx_service),
         sms_service: Arc::new(sms_service),
         mq: Arc::new(mq),
+        agent_relation_service: Arc::new(agent_relation_service),
     };
     let state_data = web::Data::new(state.clone());
 

@@ -8,6 +8,7 @@ use common::services::ip_service::IpService;
 use common::services::sms::SmsServiceSupport;
 use common::services::upload::UploadServiceSupport;
 use common::utils::redis_util::RedisUtil;
+use crate::service::agent_relation_service::AgentRelationService;
 
 #[derive(Clone)]
 #[allow(dead_code)]
@@ -20,5 +21,6 @@ pub struct AppState {
     pub email_service: Arc<EmailServiceSupport>,
     pub emqx_service: Arc<EmqxService>,
     pub sms_service: Arc<SmsServiceSupport>,
-    pub mq: Arc<MessageQueue>
+    pub mq: Arc<MessageQueue>,
+    pub agent_relation_service: Arc<AgentRelationService>,
 }
