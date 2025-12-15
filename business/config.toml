@@ -5,12 +5,16 @@ host = "0.0.0.0"
 port = 8080
 
 [database]
-url = "mysql://root:12345678@localhost:3306/kex"
+url = "mysql://kex:43mn7rryDRWAdwRa@192.168.3.112:3306/kex"
 max_connections = 10
 
 [redis]
-url = "redis://:Aq23-hjPwFB3mBDNFp3W1@localhost:6379/0"
+url = "redis://:Aq23-hjPwFB3mBDNFp3W1@192.168.3.112:6379/0"
 pool_size = 10
 
 [log]
 level = "info"
+
+[pulsar]
+url = "pulsar://192.168.3.112:6650"
+enabled = true

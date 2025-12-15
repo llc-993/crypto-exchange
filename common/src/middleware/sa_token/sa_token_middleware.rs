@@ -7,8 +7,8 @@ use std::future::Future;
 use std::pin::Pin;
 use std::rc::Rc;
 use std::sync::Arc;
-use sa_token_core::{SaTokenContext, token::TokenValue};
-use sa_token_plugin_actix_web::SaTokenState;
+use sa_token_plugin_actix_web::sa_token_core::SaTokenContext;
+use sa_token_plugin_actix_web::{SaTokenState, TokenValue};
 use crate::error::AppError;
 use super::auth_checker::AuthChecker;
 

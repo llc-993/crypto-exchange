@@ -7,6 +7,7 @@ pub mod coin_thumb;
 pub mod vo;
 pub mod order_book_depth;
 pub mod config_mapping;
+pub mod req;
 
 pub use ticker::{UnifiedTicker, MarketType};
 pub use mark_price::UnifiedMarkPrice;
@@ -14,3 +15,4 @@ pub use converter::{TickerConverter, MarkPriceConverter};
 pub use kline::Kline;
 pub use coin_thumb::CoinThumb;
 pub use order_book_depth::{OrderBookDepth, Level};
+pub use req::CreateExchangeOrderReq;

@@ -1,5 +1,5 @@
-use serde::{Deserialize, Serialize};
 use config::{Config, ConfigError, Environment, File, FileFormat};
+use serde::{Deserialize, Serialize};
 use std::env;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -102,20 +102,19 @@ impl AppConfig {
     }
 
     /// 从嵌入的配置内容加载（支持编译时嵌入）
-    /// 
+    ///
     /// # 参数
     /// * `default_config` - 默认配置内容
     /// * `prod_config` - 生产配置内容（可选）
     /// * `use_production` - 是否使用生产配置（如果为 true，会加载 prod_config 覆盖默认配置）
     pub fn from_embedded(
-        default_config: &str, 
-        prod_config: Option<&str>
+        default_config: &str,
+        prod_config: Option<&str>,
     ) -> Result<Self, ConfigError> {
         let run_mode = env::var("RUN_MODE").unwrap_or_else(|_| "development".into());
         let mut builder = Config::builder()
             // 加载嵌入的默认配置
             .add_source(File::from_str(default_config, FileFormat::Toml));
-
 
         // 如果是生产环境且提供了生产配置，加载生产配置
         if run_mode == "production" {
@@ -142,7 +141,7 @@ impl AppConfig {
         match Self::from_file(config_path) {
             Ok(config) => {
                 println!("从文件系统加载配置: {}", config_path);
-              //  println!("");
+                //  println!("");
                 Ok(config)
             }
             Err(e) => {
@@ -165,16 +164,16 @@ impl AppConfig {
                     .unwrap_or(8080),
             },
             database: DatabaseConfig {
-                url: env::var("DATABASE_URL")
-                    .unwrap_or_else(|_| "mysql://root:password@localhost:3306/crypto_exchange".to_string()),
+                url: env::var("DATABASE_URL").unwrap_or_else(|_| {
+                    "mysql://root:password@localhost:3306/crypto_exchange".to_string()
+                }),
                 max_connections: env::var("DATABASE_MAX_CONNECTIONS")
                     .unwrap_or_else(|_| "10".to_string())
                     .parse()
                     .unwrap_or(10),
             },
             redis: RedisConfig {
-                url: env::var("REDIS_URL")
-                    .unwrap_or_else(|_| "redis://localhost:6379".to_string()),
+                url: env::var("REDIS_URL").unwrap_or_else(|_| "redis://localhost:6379".to_string()),
                 pool_size: env::var("REDIS_POOL_SIZE")
                     .unwrap_or_else(|_| "10".to_string())
                     .parse()

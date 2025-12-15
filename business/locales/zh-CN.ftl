@@ -85,3 +85,5 @@ kline-symbol-empty = 交易对不能为空
 kline-time-range-invalid = 开始时间不能大于或等于结束时间
 kline-time-range-too-large = 查询时间范围过大，请缩小查询范围
 kline-data-query-failed = 查询K线数据失败
+
+amount_not_null=数量不能为空

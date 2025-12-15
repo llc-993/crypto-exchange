@@ -1,16 +1,24 @@
+use common::get_db;
 use rbatis::crud;
 use rbatis::rbdc::datetime::DateTime;
 use rust_decimal::Decimal;
-use serde::{Deserialize, Serialize};
-use common::get_db;
+use serde::{Deserialize, Deserializer, Serialize};
+
+fn i8_to_bool<'de, D>(deserializer: D) -> Result<Option<bool>, D::Error>
+where
+    D: Deserializer<'de>,
+{
+    let opt = Option::<i8>::deserialize(deserializer)?;
+    Ok(opt.map(|v| v != 0))
+}
 
 /// 现货交易对配置表
-/// 
+///
 /// 用于配置币币交易对的基本信息、手续费率、交易限制等
-/// 
+///
 /// # 表名
 /// `app_exchange_spot_coin`
-/// 
+///
 /// # 主要字段
 /// - `symbol`: 交易对，格式如 BTC/USDT（USDT是计价货币quote，BTC是交易资产base）
 /// - `data_source`: 数据源（如 binance, okx, bitget）
@@ -40,11 +48,16 @@ pub struct AppExchangeSpotCoin {
     pub quote_scale: i32,
     /// 交易资产精度
     pub base_scale: i32,
-    pub can_show: Option<i8>,
-    pub can_buy: Option<i8>,
-    pub can_sell: Option<i8>,
-    pub show_hot: Option<i8>,
-    pub show_chg: Option<i8>,
+    #[serde(deserialize_with = "i8_to_bool")]
+    pub can_show: Option<bool>,
+    #[serde(deserialize_with = "i8_to_bool")]
+    pub can_buy: Option<bool>,
+    #[serde(deserialize_with = "i8_to_bool")]
+    pub can_sell: Option<bool>,
+    #[serde(deserialize_with = "i8_to_bool")]
+    pub show_hot: Option<bool>,
+    #[serde(deserialize_with = "i8_to_bool")]
+    pub show_chg: Option<bool>,
     pub enable_order_robot: i16,
     pub auto_trigger_time: i32,
     pub buyer_low_price_rate: Option<Decimal>,
@@ -70,12 +83,22 @@ crud!(AppExchangeSpotCoin {}, "app_exchange_spot_coin");
 rbatis::impl_select!(AppExchangeSpotCoin {
     select_spot_by_data_source(data_source: String) => "`where data_source = #{data_source}`" }, "app_exchange_spot_coin");
 
+rbatis::impl_select!(AppExchangeSpotCoin{
+    select_spot_by_symbol(symbol: String) -> Option  => "`where symbol = #{symbol} `"
+}, "app_exchange_spot_coin");
+
 impl AppExchangeSpotCoin {
     pub const TABLE_NAME: &'static str = "app_exchange_spot_coin";
 
-
-    pub async fn select_spot_coin_by_data_source(data_source: String) -> Result<Vec<Self>, rbdc::Error> {
+    pub async fn select_spot_coin_by_data_source(
+        data_source: String,
+    ) -> Result<Vec<Self>, rbdc::Error> {
         let rb = get_db();
         Self::select_spot_by_data_source(rb, data_source).await
+    }
+
+    pub async fn select_spot_coin_by_symbol(symbol: String) -> Result<Option<Self>, rbdc::Error> {
+        let rb = get_db();
+        Self::select_spot_by_symbol(rb, symbol).await
     }
 }

@@ -8,13 +8,13 @@
       <sourceFolder url="file://$MODULE_DIR$/block/src" isTestSource="false" />
       <sourceFolder url="file://$MODULE_DIR$/business/src" isTestSource="false" />
       <sourceFolder url="file://$MODULE_DIR$/common/src" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/config_derive/src" isTestSource="false" />
       <sourceFolder url="file://$MODULE_DIR$/exchange/src" isTestSource="false" />
       <sourceFolder url="file://$MODULE_DIR$/input/src" isTestSource="false" />
       <sourceFolder url="file://$MODULE_DIR$/job/src" isTestSource="false" />
       <sourceFolder url="file://$MODULE_DIR$/manage/src" isTestSource="false" />
       <sourceFolder url="file://$MODULE_DIR$/market/src" isTestSource="false" />
       <sourceFolder url="file://$MODULE_DIR$/orm/src" isTestSource="false" />
-      <sourceFolder url="file://$MODULE_DIR$/src" isTestSource="false" />
       <excludeFolder url="file://$MODULE_DIR$/target" />
     </content>
     <orderEntry type="inheritedJdk" />

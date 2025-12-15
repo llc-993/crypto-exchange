@@ -85,3 +85,7 @@ kline-symbol-empty = Symbol cannot be empty
 kline-time-range-invalid = Start time cannot be greater than or equal to end time
 kline-time-range-too-large = Query time range is too large, please reduce the query range
 kline-data-query-failed = Failed to query K-line data
+
+amount_not_null=amount not null
+trading_pair_can_not_buy=The current trading pair is prohibited from trading
+trading_pair_can_not_sell=The current trading pair is prohibited from trading

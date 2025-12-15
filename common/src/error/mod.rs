@@ -176,10 +176,10 @@ impl ResponseError for AppError {
                 log::warn!("验证错误: {}", key);
                 translate_with_params(key, params.clone())
             },
-            AppError::AuthError { key, params: _params } => {
+            AppError::AuthError { key, params } => {
                 log::warn!("认证错误: {}", key);
-                // For auth errors, we always return a generic "auth_failed" message
-                translate_with_params("error.auth_failed", None)
+                // 使用传入的 key 进行翻译
+                translate_with_params(key, params.clone())
             },
             AppError::BusinessError { key, params } => {
                 log::error!("业务异常: {}", key);
