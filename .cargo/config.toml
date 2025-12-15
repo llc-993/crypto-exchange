@@ -1,0 +1,25 @@
+[build]
+# 使用并行编译（默认已启用，但可以显式设置）
+jobs = 6  # 0 表示使用所有可用 CPU 核心
+
+# 增量编译（默认已启用）
+incremental = true
+
+# 使用更快的链接器（macOS 上可以使用 zld 或 lld）
+# linker = "clang"
+rustc-wrapper = "sccache"
+
+[target.x86_64-apple-darwin]
+# macOS 上可以使用 zld 链接器加速链接
+# linker = "zld"
+
+
+[profile.dev]
+# 优化开发模式的编译速度
+opt-level = 0
+debug = true
+split-debuginfo = "unpacked"  # macOS 上可以加速调试信息处理
+
+[profile.release]
+opt-level = 3
+lto = "thin"  # 使用 thin LTO 而不是 full LTO，编译更快

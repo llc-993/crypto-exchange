@@ -1,3 +1,9 @@
-/target
+# 忽略所有 target 目录
+target/
+**/target/
+
+# 忽略 Cargo.lock（如果是库项目，不建议忽略）
 Cargo.lock
-.idea
+
+# 忽略 IDE 配置
+.idea/

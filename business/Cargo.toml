@@ -1,0 +1,60 @@
+[package]
+name = "business"
+version.workspace = true
+edition.workspace = true
+authors.workspace = true
+license.workspace = true
+
+[dependencies]
+# Web框架
+actix-web.workspace = true
+actix-rt.workspace = true
+actix-cors.workspace = true
+actix-multipart = "0.7.2"
+
+# 日志和追踪
+tracing.workspace = true
+tracing-subscriber.workspace = true
+log.workspace = true
+
+# 数据库ORM
+rbatis.workspace = true
+rbdc.workspace = true
+rbdc-mysql.workspace = true
+rbs.workspace = true
+
+# 错误处理
+anyhow.workspace = true
+thiserror.workspace = true
+
+# 时间
+chrono.workspace = true
+
+# 异步
+tokio.workspace = true
+async-trait.workspace = true
+futures.workspace = true
+
+# 序列化/反序列化
+serde.workspace = true
+serde_json.workspace = true
+
+# 工具
+once_cell.workspace = true
+uuid.workspace = true
+
+# 精确数值计算
+rust_decimal.workspace = true
+
+# 内部依赖
+common.workspace = true
+orm.workspace = true
+sa-token-plugin-actix-web.workspace=true
+
+# 国际化 (Fluent)
+fluent.workspace = true
+fluent-bundle.workspace = true
+unic-langid.workspace = true
+
+# i18n
+rust-i18n = "3"
