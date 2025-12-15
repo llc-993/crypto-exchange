@@ -7,6 +7,7 @@ pub struct AppConfig {
     pub server: ServerConfig,
     pub database: DatabaseConfig,
     pub redis: RedisConfig,
+    #[serde(default)]
     pub pulsar: PulsarConfig,
     #[serde(default)]
     pub disruptor: DisruptorConfig,
@@ -37,6 +38,15 @@ pub struct RedisConfig {
 pub struct PulsarConfig {
     pub url: String,
     pub enabled: bool,
+}
+
+impl Default for PulsarConfig {
+    fn default() -> Self {
+        Self {
+            url: "pulsar://127.0.0.1:6650".to_string(),
+            enabled: false,
+        }
+    }
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
