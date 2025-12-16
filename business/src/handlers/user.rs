@@ -20,6 +20,7 @@ use rbs::value;
 use common::mq::message_queue::Message;
 use rust_decimal::Decimal;
 use common::utils::generator_id_util;
+use common::models::req::payloads::UserRegisteredPayload;
 
 /// POST /api/user/auth/login
 #[post("/api/user/auth/login")]
@@ -298,13 +299,6 @@ async fn resolve_parent_agent(
     }
 }
 
-/// 用户注册事件载荷
-#[derive(Debug, Serialize, Deserialize)]
-struct UserRegisteredPayload {
-    user_id: u64,
-    username: String,
-    ip: Option<String>,
-}
 
 /// 发布用户注册事件
 async fn publish_user_registered_event(
