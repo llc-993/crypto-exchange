@@ -1,4 +1,4 @@
-use rbatis::crud;
+use rbatis::{crud, impl_select};
 use rbatis::rbdc::datetime::DateTime;
 use serde::{Deserialize, Serialize};
 
@@ -37,6 +37,8 @@ pub struct AppAgentRelation {
 }
 
 crud!(AppAgentRelation {}, "app_agent_relation");
+impl_select!(AppAgentRelation{select_by_share_code(code: &str) -> Option => "`where ori_share_code = #{code} LIMIT 1`" });
+impl_select!(AppAgentRelation{select_by_ori_user_id(ori_user_id: i64) -> Option => "`where ori_user_id = #{ori_user_id} LIMIT 1`"});
 
 impl AppAgentRelation {
     pub const TABLE_NAME: &'static str = "app_agent_relation";
