@@ -21,7 +21,7 @@ use common::services::sms::SmsServiceSupport;
 use common::mq::message_queue::MessageQueue;
 use crate::service::agent_relation_service::AgentRelationService;
 
-mod handle;
+mod handlers;
 mod service;
 mod middleware;
 mod config;
@@ -194,13 +194,13 @@ async fn main()  -> std::io::Result<()>{
             .app_data(error_handler::query_config())
             // 注册全局数据
             .app_data(state_data.clone()) // Inject AppState
-            .service(handle::common::test)
-            .service(handle::common::test_query)
-            .service(handle::common::test_body)
-            .service(handle::common::query_ip_address)
-            .service(handle::common::config)
-            .service(handle::common::upload_image)
-            .service(handle::user::login)
+            .service(handlers::common::test)
+            .service(handlers::common::test_query)
+            .service(handlers::common::test_body)
+            .service(handlers::common::query_ip_address)
+            .service(handlers::common::config)
+            .service(handlers::common::upload_image)
+            .service(handlers::user::login)
     }).bind(&addr)?
         .run()
         .await

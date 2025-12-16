@@ -12,3 +12,17 @@ pub struct LoginRequest {
 
 fn default_remember_me() -> bool { true }
 
+
+#[derive(Debug, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct RegisterRequest {
+
+    pub user_account: String,
+
+    pub password: String,
+
+    pub money_password: String,
+
+    pub invite_code: Option<String>,
+
+}

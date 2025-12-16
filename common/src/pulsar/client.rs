@@ -38,11 +38,11 @@ impl PulsarClient {
 
     /// 初始化全局 PulsarClient
     pub async fn init_global(url: &str) -> Result<(), pulsar::Error> {
-        // 保存当前 runtime handle，用于在非 Tokio 线程中 spawn 任务
+        // 保存当前 runtime handlers，用于在非 Tokio 线程中 spawn 任务
         let handle = Handle::try_current()
             .or_else(|_| Err(pulsar::Error::Custom("必须在 Tokio runtime 中调用 init_global".to_string())))?;
         RUNTIME_HANDLE.set(handle)
-            .map_err(|_| pulsar::Error::Custom("Runtime handle already set".to_string()))?;
+            .map_err(|_| pulsar::Error::Custom("Runtime handlers already set".to_string()))?;
 
         let client = Arc::new(Self::new());
         client.connect(url).await?;
@@ -83,7 +83,7 @@ impl PulsarClient {
     ///
     /// PulsarClient::publish_async("my-topic", data);
     pub fn publish_async<T: Event + Clone>(topic: &'static str, msg: T) {
-        // 尝试获取当前 runtime handle，如果失败则使用全局 handle
+        // 尝试获取当前 runtime handlers，如果失败则使用全局 handlers
         // 这样可以支持在非 Tokio runtime 线程中调用（如 disruptor 处理器线程）
         let handle = Handle::try_current()
             .ok()
@@ -97,7 +97,7 @@ impl PulsarClient {
             }
 
             None => {
-                log::error!("[Pulsar] 无法获取 Tokio runtime handle，消息发送失败: {}", topic);
+                log::error!("[Pulsar] 无法获取 Tokio runtime handlers，消息发送失败: {}", topic);
             }
         }
     }
