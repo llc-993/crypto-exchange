@@ -5,3 +5,4 @@ pub mod upload;
 pub mod email;
 pub mod sms;
 pub mod emqx_service;
+pub mod wallet_service;

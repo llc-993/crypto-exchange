@@ -26,6 +26,7 @@ pub struct AppUserWallet {
 }
 
 crud!(AppUserWallet {}, "app_user_wallet");
+impl_select!(AppUserWallet{select_by_user_id(user_id: i64, coin_id: String) -> Option => "`where user_id = #{user_id} and coin_id = #{coin_id} limit 1`"});
 
 impl AppUserWallet {
     pub const TABLE_NAME: &'static str = "app_user_wallet";

@@ -49,6 +49,9 @@ uuid.workspace = true
 # 精确数值计算
 rust_decimal.workspace = true
 
+# 迭代枚举
+strum = { version = "0.24", features = ["derive"] }
+
 # pulsar 消息队列
 pulsar.workspace = true
 
